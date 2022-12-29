@@ -10,6 +10,17 @@ const createBoard = function(w, h) {
   return board;
 }
 
+const getLineType = function(line) {
+  if (line !== undefined && (line.toLowerCase() === 'standard' || line.toLowerCase() === 'bold')) {
+    return line.toLowerCase();
+  }
+  return 'standard';
+}
+
+const isValidRotation = function(rotation) {
+  return rotation !== undefined && (rotation.toLowerCase() === 'left' || rotation.toLowerCase() === 'right' || rotation.toLowerCase() === 'standard');
+}
+
 const drawCurve = function(board, pos, type, params) {
   if (type === 'R') {
     board[pos.y][pos.x] = '_';
@@ -215,9 +226,71 @@ const _gosper = function(n, queue, type) {
   }
 }
 
-const gosper = function(n, type) {
+const _gosperInverse = function(n, queue, type) {
+  if (n <= 0) {
+    // Add to queue
+    queue.push({ type: type });
+  } else {
+    if (type === 'L') {
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'L');
+      _gosperInverse(n - 1, queue, 'L');
+      _gosperInverse(n - 1, queue, 'DR');
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'L');
+    } else if (type === 'R') {
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'UR');
+      _gosperInverse(n - 1, queue, 'L');
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'DR');
+    } else if (type === 'UL') {
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'L');
+      _gosperInverse(n - 1, queue, 'DR');
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'UR');
+    } else if (type === 'UR') {
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'UR');
+      _gosperInverse(n - 1, queue, 'UR');
+      _gosperInverse(n - 1, queue, 'L');
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'UR');
+    } else if (type === 'DL') {
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'DR');
+      _gosperInverse(n - 1, queue, 'UR');
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'L');
+    } else if (type === 'DR') {
+      _gosperInverse(n - 1, queue, 'DL');
+      _gosperInverse(n - 1, queue, 'DR');
+      _gosperInverse(n - 1, queue, 'DR');
+      _gosperInverse(n - 1, queue, 'UR');
+      _gosperInverse(n - 1, queue, 'UL');
+      _gosperInverse(n - 1, queue, 'R');
+      _gosperInverse(n - 1, queue, 'DR');
+    }
+  }
+}
+
+const gosper = function(n, type, inverse) {
   let queue = [];
-  _gosper(n, queue, type);
+  if (inverse) {
+    _gosperInverse(n, queue, type);
+  } else {
+    _gosper(n, queue, type);
+  }
+  
 
   const finalPoint = assignRelativePoints(queue);
   const dimensions = getDimensions(queue, finalPoint);
@@ -232,7 +305,7 @@ const gosper = function(n, type) {
   return board;
 }
 
-const draw = function(board) {
+const draw = function(board, lineType) {
   var result = '\n ';
   for (let i = 0; i < board.length; i++) {
     for (let j = 0; j < board[i].length; j++) {
@@ -240,17 +313,31 @@ const draw = function(board) {
     }
     result += '\n ';
   }
+  if (lineType === 'bold') {
+    return '\u001b[1m' + result + '\u001b[22m';
+  }
   return result;
 }
 
-const create = function(n) {
+const create = function(n, config) {
   if (n === undefined || isNaN(n) || n < 0) {
     return '';
   }
 
-  const board = gosper(n, 'L');
+  const inverse = config !== undefined && config.inverse === true;
+  const rotate = config !== undefined && isValidRotation(config.rotate) ? config.rotate.toLowerCase() : 'standard';
+  const lineType = config !== undefined ? getLineType(config.line) : undefined;
+
+  let board;
+  if (rotate === 'left') {
+    board = gosper(n, inverse ? 'UL' : 'DR', inverse);
+  } else if (rotate === 'right') {
+    board = gosper(n, inverse ? 'UR': 'DL', inverse);
+  } else {
+    board = gosper(n, inverse ? 'R' : 'L', inverse);
+  }
   
-  return draw(board);
+  return draw(board, lineType);
 }
 
 module.exports = {
