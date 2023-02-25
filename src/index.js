@@ -305,13 +305,16 @@ const gosper = function(n, type, inverse) {
   return board;
 }
 
-const draw = function(board, lineType) {
+const draw = function(board, lineType, slash) {
   var result = '\n ';
   for (let i = 0; i < board.length; i++) {
     for (let j = 0; j < board[i].length; j++) {
       result += board[board.length - i - 1][j];
     }
     result += '\n ';
+  }
+  if (slash) {
+    result = result.replaceAll('╱', '/').replaceAll('╲', '\\');
   }
   if (lineType === 'bold') {
     return '\u001b[1m' + result + '\u001b[22m';
@@ -327,6 +330,7 @@ const create = function(n, config) {
   const inverse = config !== undefined && config.inverse === true;
   const rotate = config !== undefined && isValidRotation(config.rotate) ? config.rotate.toLowerCase() : 'standard';
   const lineType = config !== undefined ? getLineType(config.line) : undefined;
+  const slash = config !== undefined && config.slash === true;
 
   let board;
   if (rotate === 'left') {
@@ -337,7 +341,7 @@ const create = function(n, config) {
     board = gosper(n, inverse ? 'R' : 'L', inverse);
   }
   
-  return draw(board, lineType);
+  return draw(board, lineType, slash);
 }
 
 module.exports = {

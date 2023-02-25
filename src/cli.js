@@ -9,13 +9,15 @@ const printUsage = function(showIntro) {
     console.log('\n' + 
                 ' Usage:\n' + 
                 '   $ gosper-curve-cli <n>\n' + 
+                '   $ gosper-curve-cli <n> [options]\n' + 
                 '\n' + 
                 '   <n> is the recursive step, a number greater than or equal to 0\n' + 
                 '\n' +
                 ' Options:\n' + 
                 '   --inverse, -i      Draw the inverse Gosper Curve\n' + 
                 '   --line=<line>      Draw using a specific line type: [bold|standard]\n' + 
-                '   --rotate=<rotate>  Rotate the Gosper Curve: [left|right|standard]\n');
+                '   --rotate=<rotate>  Rotate the Gosper Curve: [left|right|standard]\n' +
+                '   --slash, -s        Draw using standard slash characters\n');
 }
 
 const getFlags = function(params) {
@@ -87,6 +89,15 @@ const getRotation = function(flags) {
     return undefined;
 }
 
+const drawSlash = function(flags) {
+    for (let i = 0; i < flags.length; i++) {
+        if (flags[i] && (flags[i].toLowerCase() === '-s' || flags[i].toLowerCase() === '--slash')) {
+            return true;
+        }
+    }
+    return false;
+}
+
 if (process.argv.length > 2) {
     const params = process.argv.slice(2);
     const values = getValues(params);
@@ -94,7 +105,7 @@ if (process.argv.length > 2) {
     if (values[0] && !isNaN(values[0]) && parseInt(values[0]) >= 0) {
         var n = parseInt(values[0]);
         if (n !== undefined) {
-            console.log(gosper_curve.create(n, { rotate: getRotation(flags), inverse: drawInverse(flags), line: getLine(flags) }));
+            console.log(gosper_curve.create(n, { rotate: getRotation(flags), inverse: drawInverse(flags), line: getLine(flags), slash: drawSlash(flags) }));
         }
     } else {
         console.log('\n <n> should be a number greater than or equal to 0');
